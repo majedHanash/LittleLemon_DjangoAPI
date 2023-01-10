@@ -24,11 +24,8 @@ class MenuItemSerializer(serializers.ModelSerializer):
                         )
                     ]
                 },
-                'price':{
-                    'min_value':0
-                }
             }
     def validate(self, attrs):
-        if attrs['price'] <= 0:
+        if 'price' in attrs and attrs['price'] <= 0:
             raise serializers.ValidationError("Price must be greater than zero.")
         return super().validate(attrs)

@@ -6,6 +6,7 @@ from .serializers import MenuItemSerializer
 from .permissions import IsManager
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
+from rest_framework.views import APIView
 # Create your views here.
 
 class MenuitemView(generics.ListCreateAPIView):
@@ -33,3 +34,15 @@ class MenuitemView(generics.ListCreateAPIView):
         if category:
             queryset = queryset.filter(category__title__iexact=category)
         return queryset
+
+class MenuItemDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = MenuItemSerializer
+    queryset = MenuItem.objects.all()
+
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
+    def get_permissions(self):
+        if self.request.method != 'GET':
+            self.permission_classes = [IsManager]
+        return super().get_permissions()
+
