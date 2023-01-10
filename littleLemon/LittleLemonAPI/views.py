@@ -18,3 +18,15 @@ class MenuitemView(generics.ListCreateAPIView):
 
     pagination_class = PageNumberPagination
     pagination_class.page_size_query_param = 'perpage'
+    def get_queryset(self):
+        queryset = MenuItem.objects.all()
+        to_price = self.request.query_params.get('to_price')
+        search = self.request.query_params.get('search')
+        category = self.request.query_params.get('category')
+        if search:
+            queryset = queryset.filter(title__contains=search)
+        if to_price:
+            queryset = queryset.filter(price__lte=to_price)
+        if category:
+            queryset = queryset.filter(category__title__iexact=category)
+        return queryset
