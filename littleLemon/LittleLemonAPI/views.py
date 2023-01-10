@@ -5,12 +5,14 @@ from .models import MenuItem
 from .serializers import MenuItemSerializer
 from .permissions import IsManager
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 # Create your views here.
 
 class MenuitemView(generics.ListCreateAPIView):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemSerializer
-    
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
     def get_permissions(self):
         if self.request.method == 'POST':
             self.permission_classes = [IsManager]
@@ -18,6 +20,7 @@ class MenuitemView(generics.ListCreateAPIView):
 
     pagination_class = PageNumberPagination
     pagination_class.page_size_query_param = 'perpage'
+
     def get_queryset(self):
         queryset = MenuItem.objects.all()
         to_price = self.request.query_params.get('to_price')
