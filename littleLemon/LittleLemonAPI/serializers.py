@@ -29,3 +29,9 @@ class MenuItemSerializer(serializers.ModelSerializer):
         if 'price' in attrs and attrs['price'] <= 0:
             raise serializers.ValidationError("Price must be greater than zero.")
         return super().validate(attrs)
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id','username','first_name','last_name','email']
+        extra_kwargs = {'std_code': {'required': False}}

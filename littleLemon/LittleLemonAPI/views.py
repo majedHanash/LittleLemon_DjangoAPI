@@ -2,11 +2,16 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework import generics
 from .models import MenuItem
-from .serializers import MenuItemSerializer
+from .serializers import MenuItemSerializer, UserSerializer
 from .permissions import IsManager
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
+from django.contrib.auth.models import User, Group
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from rest_framework import status
+
 # Create your views here.
 
 class MenuitemView(generics.ListCreateAPIView):
@@ -46,3 +51,53 @@ class MenuItemDetailView(generics.RetrieveUpdateDestroyAPIView):
             self.permission_classes = [IsManager]
         return super().get_permissions()
 
+class GroupView(APIView):
+    group = None
+    def get(self, request):
+        users = User.objects.filter(groups__name=self.group)
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+    
+    def post(self, request):
+        username = request.data.get('username')
+        if username:
+            user = get_object_or_404(User, username=username)
+            assign_group = Group.objects.get(name=self.group)
+            assign_group.user_set.add(user)
+            return Response(status=status.HTTP_201_CREATED)
+        else:
+            return Response({'username':'this field is required'} ,status=status.HTTP_400_BAD_REQUEST)
+
+    def get_queryset(self):
+        return super().get_queryset()
+    
+
+    def get_permissions(self):
+        self.permission_classes = [IsManager]
+        return super().get_permissions()
+
+class ManagerView(GroupView):
+    group = 'Manager'
+
+class DeliveryCrewView(GroupView):
+    group = 'Delivery Crew'
+
+class GroupRemoveView(APIView):
+    group = None
+    def delete(self, request, pk, format=None):
+        user = get_object_or_404(User,id=pk)
+        if not user.groups.filter(name=self.group):
+            return Response('user with id: ' + str(pk) + ' is not a ' + self.group, status=status.HTTP_400_BAD_REQUEST)
+            
+        assign_group = Group.objects.get(name=self.group)
+        assign_group.user_set.remove(user)
+        return Response(status=status.HTTP_200_OK)
+
+    def get_permissions(self):
+        self.permission_classes = [IsManager]
+        return super().get_permissions()
+class ManagerRemoveView(GroupRemoveView):
+    group = 'Manager'
+
+class DeliveryCrewRemoveView(GroupRemoveView):
+    group = 'Delivery Crew'
