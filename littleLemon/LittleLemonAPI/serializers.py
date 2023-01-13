@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework.serializers import ModelSerializer
-from .models import MenuItem, Category
-from rest_framework.validators import UniqueValidator
+from .models import MenuItem, Category, Cart
+from rest_framework.validators import UniqueValidator, UniqueTogetherValidator
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -35,3 +35,43 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id','username','first_name','last_name','email']
         extra_kwargs = {'std_code': {'required': False}}
+
+class CartSerializer(serializers.ModelSerializer):
+    user = None
+    menuitem_id = serializers.IntegerField(write_only=True)
+    menuitem = MenuItemSerializer(read_only=True)
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'menuitem_id', 'menuitem','quantity', 'unit_price','price']
+        read_only_fields = ['unit_price','price','user']
+        validators = [
+            UniqueTogetherValidator (
+                queryset=Cart.objects.all(),
+                fields=['user','menuitem_id']
+            )
+        ]
+    
+
+class AddCartSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(
+    default=serializers.CurrentUserDefault()
+        )
+    menuitem_id = serializers.IntegerField(write_only=True)
+    menuitem = MenuItemSerializer(read_only=True)
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'menuitem_id', 'menuitem','quantity', 'unit_price','price']
+        read_only_fields = ['unit_price','price','user']
+        validators = [
+            UniqueTogetherValidator (
+                queryset=Cart.objects.all(),
+                fields=['user','menuitem_id']
+            )
+        ]
+
+class GetCartSerializer(CartSerializer):
+    user = UserSerializer(read_only=True)
+    
+
+
+    

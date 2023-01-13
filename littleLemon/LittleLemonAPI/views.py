@@ -1,9 +1,9 @@
 from django.shortcuts import render
-from rest_framework import viewsets
 from rest_framework import generics
-from .models import MenuItem
-from .serializers import MenuItemSerializer, UserSerializer
+from .models import MenuItem, Cart
+from .serializers import MenuItemSerializer, UserSerializer, AddCartSerializer, GetCartSerializer
 from .permissions import IsManager
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework.views import APIView
@@ -78,7 +78,6 @@ class GroupView(APIView):
 
 class ManagerView(GroupView):
     group = 'Manager'
-
 class DeliveryCrewView(GroupView):
     group = 'Delivery Crew'
 
@@ -98,6 +97,20 @@ class GroupRemoveView(APIView):
         return super().get_permissions()
 class ManagerRemoveView(GroupRemoveView):
     group = 'Manager'
-
 class DeliveryCrewRemoveView(GroupRemoveView):
     group = 'Delivery Crew'
+
+class CartView(generics.ListCreateAPIView, generics.DestroyAPIView):
+    serializer_class = AddCartSerializer
+    def get(self, request, format=None):
+        carts = Cart.objects.filter(user__id=request.user.id)
+        serializer = GetCartSerializer(carts, many=True)
+        return Response(serializer.data)
+
+    def get_permissions(self):
+        self.permission_classes = [IsAuthenticated]
+        return super().get_permissions()
+        
+    def destroy(self, request, *args, **kwargs):
+        Cart.objects.filter(user__id=request.user.id).delete()
+        return Response(status=status.HTTP_200_OK)

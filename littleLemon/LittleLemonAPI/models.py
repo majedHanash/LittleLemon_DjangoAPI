@@ -22,6 +22,17 @@ class Cart(models.Model):
     price = models.DecimalField(max_digits=6, decimal_places=2)
     class Meta:
         unique_together = ('menuitem','user')
+    @property
+    def get_unit_price(self):
+        return self.menuitem.price
+    @property
+    def get_price(self):
+        return self.unit_price * self.quantity
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        self.unit_price = self.get_unit_price
+        self.price = self.get_price
+        return super().save(force_insert, force_update, using, update_fields)
 
 class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
